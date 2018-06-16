@@ -19,7 +19,11 @@ func (f *Fate) CheckResMiddleware() httputils.APPMiddlewareFunc {
 func (f *Fate) AuthMiddleware() httputils.APPMiddlewareFunc {
 	return func(w http.ResponseWriter, r *http.Request, next httputils.AppHandleFunc) httputils.HTTPError {
 		if !GetIsLogin(r.Context()) {
-			f.Login(w, r)
+			if httputils.ExpectsJson(r) {
+				return httputils.Unauthorized("Unauthorized")
+			}else{
+				f.Login(w, r)
+			}
 			return nil
 		}
 		return next(w, r)
