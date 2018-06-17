@@ -25,7 +25,7 @@ func (f *Fate) CallbackHandler() httputils.AppHandleFunc {
 		}
 		callback := strings.TrimSpace(r.FormValue("callback"))
 		if callback == "" {
-			callback = f.opts.FateUrl
+			callback = r.Host
 		}
 
 		http.SetCookie(w, &http.Cookie{
