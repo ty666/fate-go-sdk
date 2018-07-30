@@ -18,7 +18,7 @@ type AccessTokenClient struct {
 	atsc      pb.AccessTokenServiceClient
 	timeout   time.Duration
 	cache     Cache
-	mutex     sync.Mutex
+	// mutex     sync.Mutex
 }
 
 const (
@@ -33,7 +33,7 @@ func (atc *AccessTokenClient) GetToken() (string, error) {
 		ok  bool
 	)
 	// todo 这个锁可以优化
-	atc.mutex.Lock()
+	// atc.mutex.Lock()
 	if ati, ok = atc.cache.Get(accessTokenCacheKey); !ok {
 
 		at, err := atc.RequestToken()
@@ -50,7 +50,7 @@ func (atc *AccessTokenClient) GetToken() (string, error) {
 		ati = at.Token
 		atc.cache.Set(accessTokenCacheKey, ati, ttl)
 	}
-	atc.mutex.Unlock()
+	// atc.mutex.Unlock()
 	if atStr, ok := ati.(string); ok {
 		return atStr, nil
 	} else {
@@ -65,5 +65,5 @@ func (atc *AccessTokenClient) RequestToken() (*pb.AccessToken, error) {
 
 func NewAccessTokenClient(appID int32, appSecret string, atsc pb.AccessTokenServiceClient,
 	timeout time.Duration, cache Cache) *AccessTokenClient {
-	return &AccessTokenClient{appID: appID, appSecret: appSecret, atsc: atsc, timeout: timeout, cache: cache, mutex: sync.Mutex{}}
+	return &AccessTokenClient{appID: appID, appSecret: appSecret, atsc: atsc, timeout: timeout, cache: cache/*, mutex: sync.Mutex{}*/}
 }
