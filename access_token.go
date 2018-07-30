@@ -4,6 +4,7 @@ import (
 	pb "github.com/zm-dev/fate-go-sdk/pb"
 	"time"
 	"context"
+	"sync"
 )
 
 type Cache interface {
@@ -17,6 +18,7 @@ type AccessTokenClient struct {
 	atsc      pb.AccessTokenServiceClient
 	timeout   time.Duration
 	cache     Cache
+	mutex     sync.Mutex
 }
 
 const (
@@ -30,9 +32,11 @@ func (atc *AccessTokenClient) GetToken() (string, error) {
 		ati interface{}
 		ok  bool
 	)
+	// todo 这个锁可以优化
+	atc.mutex.Lock()
 	if ati, ok = atc.cache.Get(accessTokenCacheKey); !ok {
-		at, err := atc.RequestToken()
 
+		at, err := atc.RequestToken()
 		if err != nil {
 			return "", err
 		}
@@ -46,7 +50,7 @@ func (atc *AccessTokenClient) GetToken() (string, error) {
 		ati = at.Token
 		atc.cache.Set(accessTokenCacheKey, ati, ttl)
 	}
-
+	atc.mutex.Unlock()
 	if atStr, ok := ati.(string); ok {
 		return atStr, nil
 	} else {
@@ -61,5 +65,5 @@ func (atc *AccessTokenClient) RequestToken() (*pb.AccessToken, error) {
 
 func NewAccessTokenClient(appID int32, appSecret string, atsc pb.AccessTokenServiceClient,
 	timeout time.Duration, cache Cache) *AccessTokenClient {
-	return &AccessTokenClient{appID: appID, appSecret: appSecret, atsc: atsc, timeout: timeout, cache: cache}
+	return &AccessTokenClient{appID: appID, appSecret: appSecret, atsc: atsc, timeout: timeout, cache: cache, mutex: sync.Mutex{}}
 }
