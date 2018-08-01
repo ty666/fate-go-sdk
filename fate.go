@@ -72,14 +72,26 @@ func (f *Fate) RedirectToLoginWithCallback(callback string, w http.ResponseWrite
 	http.Redirect(w, r, f.opts.FateUrl+"/?"+q.Encode(), http.StatusFound)
 }
 
+func (f *Fate) getLoginCheckResContext(r *http.Request) (*http.Request, error) {
+	if _, ok := fromLoginCheckResContext(r.Context()); !ok {
+		if res, err := f.Check(r); err != nil {
+			return r, err
+		} else {
+			return r.WithContext(newLoginCheckResContext(r.Context(), res)), nil
+		}
+	}
+	return r, nil
+}
+
 type loginCheckResContextKey struct{}
 
 func newLoginCheckResContext(ctx context.Context, res *pb.LoginCheckRes) context.Context {
 	return context.WithValue(ctx, loginCheckResContextKey{}, res)
 }
 
-func fromLoginCheckResContext(ctx context.Context) *pb.LoginCheckRes {
-	return ctx.Value(loginCheckResContextKey{}).(*pb.LoginCheckRes)
+func fromLoginCheckResContext(ctx context.Context) (*pb.LoginCheckRes, bool) {
+	res, ok := ctx.Value(loginCheckResContextKey{}).(*pb.LoginCheckRes)
+	return res, ok
 }
 
 func (f *Fate) Check(r *http.Request) (*pb.LoginCheckRes, error) {
@@ -99,9 +111,17 @@ func (f *Fate) Logout(ticketID string) (error) {
 }
 
 func GetIsLogin(ctx context.Context) bool {
-	return fromLoginCheckResContext(ctx).GetIsLogin()
+	if res, ok := fromLoginCheckResContext(ctx); ok {
+		return res.GetIsLogin();
+	} else {
+		return false;
+	}
 }
 
 func GetUserID(ctx context.Context) int64 {
-	return fromLoginCheckResContext(ctx).GetUserId()
+	if res, ok := fromLoginCheckResContext(ctx); ok {
+		return res.GetUserId();
+	} else {
+		return 0;
+	}
 }
