@@ -72,6 +72,13 @@ func (f *Fate) RedirectToLoginWithCallback(callback string, w http.ResponseWrite
 	http.Redirect(w, r, f.opts.FateUrl+"/?"+q.Encode(), http.StatusFound)
 }
 
+func (f *Fate) RedirectToLogout(callback string, w http.ResponseWriter, r *http.Request) {
+	q := make(url.Values)
+	q.Set("app_id", strconv.Itoa(int(f.opts.AppID)))
+	q.Set("callback", callback)
+	http.Redirect(w, r, f.opts.FateUrl+"/logout?"+q.Encode(), http.StatusFound)
+}
+
 func (f *Fate) getLoginCheckResContext(r *http.Request) (*http.Request, error) {
 	if _, ok := fromLoginCheckResContext(r.Context()); !ok {
 		if res, err := f.Check(r); err != nil {
